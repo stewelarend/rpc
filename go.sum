@@ -1,0 +1,8 @@
+github.com/stewelarend/config v0.0.0-20210505180553-bc058bfe0bb8 h1:k2hlq7j3vRSUBxcQEkvkUI/TdmlgxL3gCtd7jqDph7k=
+github.com/stewelarend/config v0.0.0-20210505180553-bc058bfe0bb8/go.mod h1:xE3u9bVcaJ5edFGIlw4d//hYIVNm23do7y/67+yrYNI=
+github.com/stewelarend/config v0.0.2 h1:yXCew1XXkpJg6hiH8q6Uicw1BiT75M3lRwJhDVR286Q=
+github.com/stewelarend/config v0.0.2/go.mod h1:vZwHXamy+CCI2JHQzMT9QuO5xoK5HFjOAA6hA6CLeYU=
+github.com/stewelarend/logger v0.0.1 h1:1SG1ZTz2VlPevGzJN5nEmegeBD2q/JzwejVR+ID9cSs=
+github.com/stewelarend/logger v0.0.1/go.mod h1:9N9cjtsb9vHO+Noy17MDNMmH4fL1jBpGJ2HIxQyljvo=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
