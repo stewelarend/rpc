@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	nethttp "net/http"
 	"path"
 	"reflect"
@@ -55,22 +54,22 @@ func (s httpRpcServer) Run() error {
 	return nethttp.ListenAndServe(fmt.Sprintf("%s:%d", s.config.Address, s.config.Port), s)
 }
 
-func (s httpRpcServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (s httpRpcServer) ServeHTTP(res nethttp.ResponseWriter, req *nethttp.Request) {
 	fmt.Printf("HTTP %s %s\n", req.Method, req.URL.Path)
-	if req.Method != http.MethodGet && req.Method != http.MethodPost {
-		http.Error(res, "method must be GET or POST", http.StatusMethodNotAllowed)
+	if req.Method != nethttp.MethodGet && req.Method != nethttp.MethodPost {
+		nethttp.Error(res, "method must be GET or POST", nethttp.StatusMethodNotAllowed)
 		return
 	}
 
 	operName := path.Clean(req.URL.Path)[1:] //skip leading '/'
 	operHandler, ok := s.service.Oper(operName)
 	if !ok {
-		http.Error(
+		nethttp.Error(
 			res,
 			fmt.Sprintf("operation \"%s\" does not exist, only %s",
 				operName,
 				strings.Join(s.service.Opers(), "|")),
-			http.StatusNotFound)
+			nethttp.StatusNotFound)
 		return
 	}
 
@@ -85,69 +84,69 @@ func (s httpRpcServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//now use this oper handler going forward instead of registered one
 	operHandler, ok = handlerStructPtrValue.Interface().(rpc.IHandler)
 	if !ok {
-		http.Error(
+		nethttp.Error(
 			res,
 			fmt.Sprintf(
 				"cannot convert %T to handler",
 				handlerStructPtrValue.Interface()),
-			http.StatusInternalServerError)
+			nethttp.StatusInternalServerError)
 		return
 	}
 
-	if req.Method == http.MethodPost {
+	if req.Method == nethttp.MethodPost {
 		//HTTP POST: parse the body into the req struct
 		if err := json.NewDecoder(req.Body).Decode(handlerStructPtrValue.Interface()); err != nil {
-			http.Error(
+			nethttp.Error(
 				res,
 				fmt.Sprintf(
 					"cannot parse body into %T",
 					handlerStructPtrValue.Interface()),
-				http.StatusBadRequest)
+				nethttp.StatusBadRequest)
 			return
 		}
 	}
 	//parse URL params into the struct
 	if err := parseIntoStruct(handlerStructPtrValue, urlParams(req.URL.Query())); err != nil {
-		http.Error(
+		nethttp.Error(
 			res,
 			fmt.Sprintf(
 				"cannot parse url params into %T: %v",
 				handlerStructPtrValue.Interface(),
 				err),
-			http.StatusBadRequest)
+			nethttp.StatusBadRequest)
 		return
 	}
 
 	if validator, ok := handlerStructPtrValue.Interface().(rpc.IValidator); ok {
 		if err := validator.Validate(); err != nil {
-			http.Error(
+			nethttp.Error(
 				res,
 				fmt.Sprintf(
 					"invalid request: %v",
 					err),
-				http.StatusBadRequest)
+				nethttp.StatusBadRequest)
 			return
 		}
 	}
 
 	operRes, err := operHandler.Exec(nil)
 	if err != nil {
-		http.Error(
+		nethttp.Error(
 			res,
 			fmt.Sprintf("operation \"%s\" failed: %v",
 				operName,
 				err),
-			http.StatusBadRequest) //todo - wrong error!
+			nethttp.StatusBadRequest) //todo - wrong error!
 		return
 	}
 	jsonRes, err := json.Marshal(operRes)
 	if err != nil {
-		http.Error(
+		nethttp.Error(
 			res,
 			fmt.Sprintf("operation \"%s\" response encoding failed: %v",
 				operName,
 				err),
-			http.StatusBadRequest) //todo - wrong error!
+			nethttp.StatusBadRequest) //todo - wrong error!
 		return
 	}
 
