@@ -5,11 +5,10 @@ import (
 	"fmt"
 	nethttp "net/http"
 	"path"
-	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/stewelarend/rpc"
+	"github.com/stewelarend/util"
 )
 
 func init() {
@@ -73,51 +72,38 @@ func (s httpRpcServer) ServeHTTP(res nethttp.ResponseWriter, req *nethttp.Reques
 		return
 	}
 
-	//create a new handler struct instance and copy the value from the registered struct
-	//(it copies defaults defined by the user and fnc in rpc.go's handlerStruct...)
-	handlerType := reflect.TypeOf(operHandler)
-	if handlerType.Kind() == reflect.Ptr {
-		handlerType = handlerType.Elem()
-	}
-	handlerStructPtrValue := reflect.New(handlerType)
-	handlerStructPtrValue.Elem().Set(reflect.ValueOf(operHandler))
-	//now use this oper handler going forward instead of registered one
-	operHandler, ok = handlerStructPtrValue.Interface().(rpc.IHandler)
-	if !ok {
-		nethttp.Error(
-			res,
-			fmt.Sprintf(
-				"cannot convert %T to handler",
-				handlerStructPtrValue.Interface()),
-			nethttp.StatusInternalServerError)
-		return
-	}
-
+	//parse body only if POST
 	if req.Method == nethttp.MethodPost {
-		//HTTP POST: parse the body into the req struct
-		if err := json.NewDecoder(req.Body).Decode(handlerStructPtrValue.Interface()); err != nil {
+		newOperHandler, err := util.StructFromJSONReader(operHandler, req.Body)
+		if err != nil {
 			nethttp.Error(
 				res,
 				fmt.Sprintf(
-					"cannot parse body into %T",
-					handlerStructPtrValue.Interface()),
+					"invalid body: %v",
+					err),
 				nethttp.StatusBadRequest)
 			return
 		}
-	}
-	//parse URL params into the struct
-	if err := parseIntoStruct(handlerStructPtrValue, urlParams(req.URL.Query())); err != nil {
-		nethttp.Error(
-			res,
-			fmt.Sprintf(
-				"cannot parse url params into %T: %v",
-				handlerStructPtrValue.Interface(),
-				err),
-			nethttp.StatusBadRequest)
-		return
+		operHandler = newOperHandler.(rpc.IHandler)
 	}
 
-	if validator, ok := handlerStructPtrValue.Interface().(rpc.IValidator); ok {
+	//parse URL params into the struct
+	{
+		newOperHandler, err := util.StructFromMap(operHandler, urlParams(req.URL.Query()))
+		if err != nil {
+			nethttp.Error(
+				res,
+				fmt.Sprintf(
+					"invalid URL params: %v",
+					err),
+				nethttp.StatusBadRequest)
+			return
+		}
+		operHandler = newOperHandler.(rpc.IHandler)
+	}
+
+	//validate if possible
+	if validator, ok := operHandler.(rpc.IValidator); ok {
 		if err := validator.Validate(); err != nil {
 			nethttp.Error(
 				res,
@@ -164,93 +150,4 @@ func urlParams(p map[string][]string) map[string]interface{} {
 		}
 	}
 	return paramsObject
-}
-
-func parseIntoStruct(structPtrValue reflect.Value, params map[string]interface{}) error {
-	if structPtrValue.Kind() != reflect.Ptr ||
-		structPtrValue.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("%v is not struct ptr value", structPtrValue)
-	}
-
-	structType := structPtrValue.Type().Elem()
-	for paramName, paramValue := range params {
-		structField, ok := structType.FieldByNameFunc(func(fieldName string) bool {
-			if paramName == fieldName {
-				return true
-			}
-			structTypeField, _ := structType.FieldByName(fieldName)
-			jsonTags := strings.SplitN(structTypeField.Tag.Get("json"), ",", 2)
-			if len(jsonTags) > 0 && jsonTags[0] == paramName {
-				return true
-			}
-			return false
-		})
-		if !ok {
-			return fmt.Errorf("%s has no field \"%s\"", structType.Name(), paramName)
-		}
-
-		//parse the value into the field
-		fieldValue := structPtrValue.Elem().FieldByIndex(structField.Index)
-		switch fieldValue.Type().Kind() {
-		case reflect.String:
-			fieldValue.Set(reflect.ValueOf(fmt.Sprintf("%v", paramValue)))
-		case reflect.Int:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 64)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(int(intValue)))
-		case reflect.Int8:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(int8(intValue)))
-		case reflect.Uint8:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(uint8(intValue)))
-		case reflect.Int16:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(int16(intValue)))
-		case reflect.Uint16:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(uint16(intValue)))
-		case reflect.Int32:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(int32(intValue)))
-		case reflect.Uint32:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(uint32(intValue)))
-		case reflect.Int64:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(int64(intValue)))
-		case reflect.Uint64:
-			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", paramValue), 10, 8)
-			if err != nil {
-				return fmt.Errorf("cannot parse int from %s=(%T)%v for %v", paramName, paramValue, paramValue, fieldValue.Type())
-			}
-			fieldValue.Set(reflect.ValueOf(uint64(intValue)))
-		default:
-			return fmt.Errorf("cannot store %s=(%T)%v in %v", paramName, paramValue, paramValue, fieldValue.Type())
-		}
-	}
-	return nil
 }

@@ -4,5 +4,9 @@ github.com/stewelarend/config v0.0.2 h1:yXCew1XXkpJg6hiH8q6Uicw1BiT75M3lRwJhDVR2
 github.com/stewelarend/config v0.0.2/go.mod h1:vZwHXamy+CCI2JHQzMT9QuO5xoK5HFjOAA6hA6CLeYU=
 github.com/stewelarend/logger v0.0.1 h1:1SG1ZTz2VlPevGzJN5nEmegeBD2q/JzwejVR+ID9cSs=
 github.com/stewelarend/logger v0.0.1/go.mod h1:9N9cjtsb9vHO+Noy17MDNMmH4fL1jBpGJ2HIxQyljvo=
+github.com/stewelarend/util v0.0.0-20210506144540-a03a0d53fe0b h1:5uj4vLPecQMbEDKmHeyt0XXrdxhhvrT70kaoTFBR5Wo=
+github.com/stewelarend/util v0.0.0-20210506144540-a03a0d53fe0b/go.mod h1:OXfy3m1gNx2RmTNj7+AEciHq9awOJ307vyrjezCsR6Q=
+github.com/stewelarend/util v0.0.1 h1:1ivCTixeY76nMaua/2RimslifxldpcT0o7XKMSZFl3Y=
+github.com/stewelarend/util v0.0.1/go.mod h1:OXfy3m1gNx2RmTNj7+AEciHq9awOJ307vyrjezCsR6Q=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
