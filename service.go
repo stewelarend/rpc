@@ -15,6 +15,7 @@ func New(name string) IService {
 }
 
 type IService interface {
+	Name() string
 	AddStruct(name string, handler IHandler)
 	AddFunc(name string, handler HandlerFunc)
 	Oper(name string) (IHandler, bool)
@@ -36,6 +37,10 @@ type IValidator interface {
 type service struct {
 	name     string
 	handlers map[string]IHandler
+}
+
+func (service service) Name() string {
+	return service.name
 }
 
 func (service service) AddFunc(name string, handler HandlerFunc) {
