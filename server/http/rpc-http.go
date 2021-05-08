@@ -36,17 +36,21 @@ func (c *config) Validate() error {
 	return nil
 }
 
-func (c config) Create(service rpc.IService) (rpc.IServer, error) {
+func (c config) Create(service rpc.IService, tmplRequest rpc.IRequest, tmplResponse rpc.IResponse) (rpc.IServer, error) {
 	fmt.Printf("Create HTTP server: %+v\n", c)
 	return httpRpcServer{
-		service: service,
-		config:  c,
+		service:      service,
+		config:       c,
+		tmplRequest:  tmplRequest,
+		tmplResponse: tmplResponse,
 	}, nil
 }
 
 type httpRpcServer struct {
-	service rpc.IService
-	config  config
+	service      rpc.IService
+	config       config
+	tmplRequest  rpc.IRequest
+	tmplResponse rpc.IResponse
 }
 
 func (s httpRpcServer) Run() error {

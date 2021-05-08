@@ -20,7 +20,7 @@ type IService interface {
 	AddFunc(name string, handler HandlerFunc)
 	Oper(name string) (IHandler, bool)
 	Opers() []string
-	Run() error
+	Run(tmplRequest IRequest, tmplResponse IResponse) error
 }
 
 type HandlerFunc func(IContext, interface{}) (interface{}, error)
@@ -67,7 +67,7 @@ func (service service) Opers() []string {
 	return names
 }
 
-func (service service) Run() error {
+func (service service) Run(tmplRequest IRequest, tmplResponse IResponse) error {
 	//determine configured rpc.server and run it
 	serverConfigs := map[string]interface{}{}
 	for n, c := range constructors {
@@ -78,7 +78,7 @@ func (service service) Run() error {
 		return fmt.Errorf("cannot get configured rpc.server: %v", err)
 	}
 	serverConstructor := serverConfig.(IServerConstructor)
-	server, err := serverConstructor.Create(service)
+	server, err := serverConstructor.Create(service, tmplRequest, tmplResponse)
 	if err != nil {
 		return fmt.Errorf("failed to create server(%s): %v", serverName, err)
 	}
